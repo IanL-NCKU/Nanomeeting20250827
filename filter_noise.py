@@ -10,8 +10,8 @@ def generate_periodic_signal(duration=2.0, sampling_rate=1000):
     t = np.linspace(0, duration, int(sampling_rate * duration), endpoint=False)
     
     # Combine multiple sine waves with different frequencies and amplitudes
-    freq1, freq2, freq3 = 4, 6, 8  # Hz
-    amp1, amp2, amp3 = 1.0, 0.5, 0.25
+    freq1, freq2, freq3 = 10, 16, 24  # Hz
+    amp1, amp2, amp3 = 1.0, 0.5, 0.5
     
     signal_clean = (amp1 * np.sin(2 * np.pi * freq1 * t) + 
                    amp2 * np.sin(2 * np.pi * freq2 * t) + 
@@ -36,6 +36,23 @@ def apply_moving_average(signal_noisy, window_size=21):
     
     # Apply convolution with 'same' mode to keep original signal length
     signal_filtered = np.convolve(signal_noisy, kernel, mode='same')
+    
+    return signal_filtered
+
+
+def apply_butterworth_filter(signal_noisy, sampling_rate, cutoff_freq=30, order=4):
+    """
+    Apply Butterworth low-pass filter to smooth the data
+    """
+    # Normalize the cutoff frequency (0 to 1, where 1 is Nyquist frequency)
+    nyquist = sampling_rate / 2
+    normal_cutoff = cutoff_freq / nyquist
+    
+    # Design the Butterworth filter
+    b, a = signal.butter(order, normal_cutoff, btype='low', analog=False)
+    
+    # Apply the filter
+    signal_filtered = signal.filtfilt(b, a, signal_noisy)
     
     return signal_filtered
 
@@ -67,9 +84,9 @@ def find_main_frequencies(signal_data, sampling_rate, num_peaks=3):
 
 def main():
     # Parameters
-    duration = 4.0  # seconds
+    duration = 5.0  # seconds
     sampling_rate = 1000  # Hz
-    noise_level = 0.3
+    noise_level = 0.5
     cutoff_freq = 30  # Hz for Butterworth filter
     window_size = 21
     
@@ -81,9 +98,11 @@ def main():
     print("Step 2: Adding noise...")
     signal_noisy = add_noise(signal_clean, noise_level)
     
-    # Step 3: Apply Moving Average filter
-    print("Step 3: Applying Moving Average filter...")
-    signal_filtered = apply_moving_average(signal_noisy, window_size)
+    # Step 3: Apply Butterworth filter
+    print("Step 3: Applying Butterworth filter...")
+
+    signal_filtered = apply_butterworth_filter(signal_noisy, sampling_rate, cutoff_freq)
+    # signal_filtered = apply_moving_average(signal_noisy, window_size)
     
     # Step 4: Apply FFT to find main frequencies
     print("Step 4: Applying FFT to find main frequencies...")
@@ -116,7 +135,7 @@ def main():
     # Plot 3: Filtered signal
     ax3.plot(t, signal_filtered, 'g-', linewidth=1, label='Filtered')
     ax3.plot(t, signal_clean, 'b--', alpha=0.6, linewidth=1, label='Original')
-    ax3.set_title('Step 3: Butterworth Filtered Signal')
+    ax3.set_title('Step 3:Filtered Signal')
     ax3.set_xlabel('Time (s)')
     ax3.set_ylabel('Amplitude')
     ax3.legend()
